@@ -1,0 +1,27 @@
+<link rel="stylesheet" type="text/css" href="/css/autocomplete.css">
+
+<script type="text/javascript" src="/scripts/ramda.min.js"></script>
+<script type="text/javascript" src="/scripts/vue.min.js"></script>
+<script type="text/javascript" src="/scripts/pnp.min.js"></script>
+<script type="text/javascript" src="/scripts/typeahead.js"></script>
+<script type="text/javascript" src="/scripts/components/sp-peoplepicker.js"></script>
+
+<script>							
+	new Vue({
+		el: '#app',
+		data: {
+			fields: {
+				field1: null
+			}
+		},
+		components: {
+			'sp-peoplepicker': spPeoplePickerComponent
+		},
+		template: 
+		'<div>\
+			<sp-peoplepicker \
+				:model="fields"\
+				store-key="field1"/>\
+		</div>'
+	});
+</script>
