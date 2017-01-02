@@ -1,8 +1,7 @@
-﻿var spPeoplePickerComponent = (function (Vue, jQuery, pnp, R) {
+﻿(function (Vue, jQuery, pnp, R) {
     'use strict';
-    var component = {
-        template:
-        '<input autocomplete="off" :class="[\'form-control\', customClass]" type="text" v-model="value"/>',
+    Vue.component('sp-peoplepicker', {
+        template:'<input autocomplete="off" :class="[\'form-control\', customClass]" type="text" v-model="value"/>',
         props: {
             listInternalName: { type: String },
             listGuid: { type: String },
@@ -14,38 +13,32 @@
             filter: { type: String },
             onChange: { type: Function, default: function (val) { } },
             minLength: { type: Number, default: 1 },
-            maxResults: { type: Number, default: 10 }
+            maxResults: { type: Number, default: 10 },
+            user:{type: Number}
         },
         mounted: function () {
         	this.applyAutoComplete();
+            if(this.user){                
+                this.loadDisplayVal(this.user)
+            }
         },
         data: function () {
-            var _data = {
+            return {
                 value: undefined,
                 results: []
             };
-            return _data;
         },
         methods: {
         	applyAutoComplete: function () {
         		this.getInput()
 	                .typeahead('destroy')
-	                .typeahead({ hint: false, highlight: true, minLength: this.minLength },
-	                {
-	                    source: this.debounce(function (query, sync, async) {
-	                        this.fetchData(query)
-	                            .then(function (d) {
-	                                var ret = async(d || []);
-	                                this.storeResults(d);
-	                                return ret;
-	                            }.bind(this));
-	                    }.bind(this), 700),
+	                .typeahead({ hint: false, highlight: true, minLength: this.minLength },{
+	                    source: this.debounce(this.applySearch.bind(this), 700),
 	                    displayKey: this.displayField,
 	                    limit: this.maxResults
 	                })
 	                .on('typeahead:change', function (e, data) {
 	                    if (!this.getValue(data)) {
-	                    	//clean if is a invalid value
 	                        Vue.delete(this.model, this.storeKey);
 	                        Vue.set(this, 'value', '');
 	                    }
@@ -57,6 +50,14 @@
 	                }.bind(this));
 	            this.onChange(this.model);
         	},
+            applySearch:function (query, sync, async) {                
+                Promise.all([this.fetchGroupData(query) ,this.fetchData(query)])
+                    .then(function (responses) {                        
+                        var ret = async([].concat(responses[0], responses[1]) || []);
+                        this.storeResults([].concat(responses[0], responses[1]) || []);
+                        return ret;
+                    }.bind(this))
+            },
         	getFilter: function (query) {
         		return "substringof('" + query + "', LoginName) or substringof('" + query + "', Title)";
         	},
@@ -66,23 +67,35 @@
             fetchData: function (query) {
 	    		return pnp.sp.web.siteUsers.filter(this.getFilter(query)).get();
 	    	},
+            fetchGroupData: function (query) {
+	    		return pnp.sp.web.siteGroups.filter(this.getFilter(query)).get();
+	    	},
 	    	getDataByID: function (id) {
-	    		return pnp.sp.web.siteUsers.getById(id).get();
+	    		return pnp.sp.web.siteUsers.getById(id).get(); 
+	    	},
+            getGroupByID: function (id) {                
+	    		return pnp.sp.web.siteGroups.getById(id).get();
 	    	},
             getValue: function (displayVal) {
-                if (!this.results.length) return null;
-                return R.head(this.results.filter(function (obj) { return obj[this.displayField].toUpperCase() === displayVal.toUpperCase(); }.bind(this)))[this.displayField];
+                if (!this.results.length || !this.displayField) return null;
+                return R.head(this.results.filter(function (obj) { 
+                        return obj[this.displayField].toUpperCase() === displayVal.toUpperCase(); 
+                }.bind(this)))[this.displayField];
             },
             getInput: function () {
                 return jQuery(this.$el);
             },
-            loadDisplayVal: function () {
-            	if (this.model[this.storeKey] && !this.value) {
-                    this.getDataByID(this.model[this.storeKey]).then(function (d) {
+            loadDisplayVal: function (id, isGroup) {
+                if ((this.model[this.storeKey] && !this.value) || id) {
+                    (isGroup ? this.getGroupByID(id || this.model[this.storeKey]) : this.getDataByID(id || this.model[this.storeKey]))
+                    .then(function (d) {
                         this.getInput().typeahead('val', d[this.displayField] || '');
+                    }.bind(this))
+                    .catch(function(error){                        
+                        this.loadDisplayVal(id, true)
                     }.bind(this));
                 }
-            },
+            }, 
             debounce: function (func, wait, immediate) {
                 var timeout;
                 return function () {
@@ -106,6 +119,5 @@
 				deep: true
 			}
 		}        
-    };
-    return component;
+    })
 })(Vue, jQuery, $pnp, R);
