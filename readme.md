@@ -1,5 +1,5 @@
 # vue-sp-people-picker
-A Vue.js/PnP.js based SharePoint people picke component.
+A Vue.js/PnP.js based SharePoint people picker component.
 
 ## Usage
 #### Browser Globals
