@@ -23,6 +23,6 @@ new Vue({
     },
     template: 
     '<div>\
-        <v-sp-people-picker :model="selectedPeople" /> 
+        <v-sp-people-picker :model="selectedPeople" />\
     </div>'
 });
