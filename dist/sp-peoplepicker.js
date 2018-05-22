@@ -5,13 +5,11 @@
         }
     });
 
-	Vue.component('peoplepicker', {
+	Vue.component('v-sp-people-picker', {
 		props: {
 			model: { type: [Array] },
 			property: { type: String },
-			removeMethod: { type: String },
 			multiple: { type: Boolean, default: true },
-
 		},
 		components: {
             'v-select': VueSelect.VueSelect
@@ -47,26 +45,6 @@
 			applySearch: function (data) {
 				Vue.set(this, 'options', data.PrimarySearchResults);
 			},
-			applyInitialData: function (val) {
-				if (!this.multLoaded && !this.selected.length) {
-                    this.multLoaded = true;
-                    
-                    var query = val.reduce(function (arr, current) {
-                    	if(current.ACCOUNT_NAME)
-                    		arr.push('AccountName="' + current.ACCOUNT_NAME.replace('\\','\\\\') + '"');
-                    	return arr;
-                    },[]);
-                    if(query.length) {
-                    	this.search(query.join(" OR "))
-						.then(function (data) {
-							Vue.set(this, 'model', data.PrimarySearchResults);
-						}.bind(this));
-                    }
-                    this.multLoaded = true;                    
-                } else {
-                	this.multLoaded = true;
-                }
-            }
 		},
 		watch: {
             'model': function (val) {
